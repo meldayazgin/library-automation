@@ -24,7 +24,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterMoment } from '@mui/x-date-pickers/AdapterMoment';
-import { Edit as EditIcon, Delete as DeleteIcon, ArrowBack as ReturnIcon } from '@mui/icons-material';
+import { KeyboardReturn as ReturnIcon } from '@mui/icons-material';
 import moment from 'moment';
 
 const Borrowings = () => {
@@ -36,7 +36,7 @@ const Borrowings = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [formData, setFormData] = useState({
     bookId: '',
-    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000) // 14 days from now
+    dueDate: moment().add(14, 'days') // moment tipinde olmalı
   });
 
   const fetchData = async () => {
@@ -47,7 +47,6 @@ const Borrowings = () => {
           : axios.get(`/borrowings/user/${currentUser.uid}`),
         axios.get('/books')
       ]);
-
       setBorrowings(borrowingsRes.data);
       setBooks(booksRes.data);
     } catch (error) {
@@ -59,17 +58,16 @@ const Borrowings = () => {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  const handleOpenDialog = () => {
-    setOpenDialog(true);
-  };
+  const handleOpenDialog = () => setOpenDialog(true);
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setFormData({
       bookId: '',
-      dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)
+      dueDate: moment().add(14, 'days')
     });
   };
 
@@ -107,14 +105,10 @@ const Borrowings = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'borrowed':
-        return 'primary';
-      case 'returned':
-        return 'success';
-      case 'overdue':
-        return 'error';
-      default:
-        return 'default';
+      case 'borrowed': return 'primary';
+      case 'returned': return 'success';
+      case 'overdue': return 'error';
+      default: return 'default';
     }
   };
 
@@ -132,15 +126,13 @@ const Borrowings = () => {
       field: 'borrowDate',
       headerName: 'Borrow Date',
       width: 150,
-      valueFormatter: (params) =>
-        moment(params.value).format('MM/DD/YYYY')
+      valueFormatter: (params) => moment(params.value).format('MM/DD/YYYY')
     },
     {
       field: 'dueDate',
       headerName: 'Due Date',
       width: 150,
-      valueFormatter: (params) =>
-        moment(params.value).format('MM/DD/YYYY')
+      valueFormatter: (params) => moment(params.value).format('MM/DD/YYYY')
     },
     {
       field: 'returnDate',
@@ -172,7 +164,7 @@ const Borrowings = () => {
       field: 'actions',
       headerName: 'Actions',
       width: 100,
-      renderCell: (params) => (
+      renderCell: (params) =>
         params.row.status === 'borrowed' && (
           <IconButton
             color="primary"
@@ -182,8 +174,7 @@ const Borrowings = () => {
             <ReturnIcon />
           </IconButton>
         )
-      ),
-    },
+    }
   ];
 
   return (
@@ -221,9 +212,7 @@ const Borrowings = () => {
       </Paper>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Borrow a Book
-        </DialogTitle>
+        <DialogTitle>Borrow a Book</DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ mt: 1 }}>
             <FormControl fullWidth margin="normal">
@@ -240,20 +229,20 @@ const Borrowings = () => {
                     <MenuItem key={book.id} value={book.id}>
                       {book.title} ({book.available} available)
                     </MenuItem>
-                  ))
-                }
+                  ))}
               </Select>
             </FormControl>
+
             <LocalizationProvider dateAdapter={AdapterMoment}>
               <DatePicker
                 label="Due Date"
                 value={formData.dueDate}
-                onChange={(newValue) => {
+                onChange={(newValue) =>
                   setFormData(prev => ({
                     ...prev,
                     dueDate: newValue
-                  }));
-                }}
+                  }))
+                }
                 renderInput={(params) => (
                   <TextField {...params} fullWidth margin="normal" />
                 )}
@@ -273,4 +262,4 @@ const Borrowings = () => {
   );
 };
 
-export default Borrowings; 
+export default Borrowings;

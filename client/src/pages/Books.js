@@ -53,11 +53,11 @@ const Books = () => {
     if (book) {
       setSelectedBook(book);
       setFormData({
-        title: book.title,
-        author: book.author,
-        isbn: book.isbn,
-        category: book.category,
-        quantity: book.quantity,
+        title: book.title || '',
+        author: book.author || '',
+        isbn: book.isbn || '',
+        category: book.category || '',
+        quantity: book.quantity || 0,
         description: book.description || ''
       });
     } else {
@@ -91,18 +91,25 @@ const Books = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'quantity' ? parseInt(value) || '' : value
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = {
+        ...formData,
+        quantity: parseInt(formData.quantity) || 0,
+        description: formData.description?.trim() || '',
+      };
+
       if (selectedBook) {
-        await axios.put(`/books/${selectedBook.id}`, formData);
+        await axios.put(`/books/${selectedBook.id}`, payload);
       } else {
-        await axios.post('/books', formData);
+        await axios.post('/books', payload);
       }
+
       handleCloseDialog();
       fetchBooks();
     } catch (error) {
@@ -190,9 +197,7 @@ const Books = () => {
       </Paper>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          {selectedBook ? 'Edit Book' : 'Add New Book'}
-        </DialogTitle>
+        <DialogTitle>{selectedBook ? 'Edit Book' : 'Add New Book'}</DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ mt: 1 }}>
             <TextField
@@ -264,4 +269,4 @@ const Books = () => {
   );
 };
 
-export default Books; 
+export default Books;

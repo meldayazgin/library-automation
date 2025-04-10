@@ -2,76 +2,110 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const admin = require('firebase-admin');
-const { getFirestore } = require('firebase-admin/firestore');
 const path = require('path');
 const fs = require('fs');
+const axios = require('axios');
 
-// Load environment variables
+// 🌱 Ortam değişkenlerini yükle
 dotenv.config();
 
-// Read and parse firebase-admin.json
-const serviceAccountPath = path.join(__dirname, 'config', 'firebase-admin.json');
+// 🔐 Firebase Admin başlat
 let serviceAccount;
+const serviceAccountPath = path.join(__dirname, 'config', 'firebase-admin.json');
 
 try {
-  const serviceAccountRaw = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+  const raw = fs.readFileSync(serviceAccountPath, 'utf8');
+  const parsed = JSON.parse(raw);
   serviceAccount = {
-    ...serviceAccountRaw,
-    private_key: serviceAccountRaw.private_key.replace(/\\n/g, '\n'),
+    ...parsed,
+    private_key: parsed.private_key.replace(/\\n/g, '\n'),
   };
-} catch (error) {
-  console.error('Error loading Firebase service account:', error.message);
-  process.exit(1);
-}
 
-// Initialize Firebase Admin
-try {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
   });
-  console.log('Firebase Admin initialized successfully');
+
+  console.log('✅ Firebase Admin başarıyla başlatıldı');
 } catch (error) {
-  console.error('Error initializing Firebase Admin:', error.message);
+  console.error('❌ Firebase Admin başlatılamadı:', error.message);
   process.exit(1);
 }
 
-// Initialize Firestore
-const db = getFirestore();
+// 🔥 Firestore bağlantısı (gerekirse kullan)
+const db = admin.firestore();
 
-// Initialize Express app
+// 🚀 Express app
 const app = express();
-app.use(cors());
+app.use(cors({ origin: '*' }));
 app.use(express.json());
 
-// Test endpoint
-app.get('/api/test', (req, res) => {
-  res.json({ status: 'Firebase Admin is working!' });
+// 📄 Root endpoint – Backend çalışıyor mesajı
+app.get('/', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html lang="tr">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Library Automation Backend</title>
+      </head>
+      <body>
+        <h1>📡 Backend çalışıyor</h1>
+      </body>
+    </html>
+  `);
 });
 
-// API routes
+// ✅ Firebase Admin test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({ status: '🔥 Firebase Admin aktif' });
+});
+
+// 🌐 Genel amaçlı proxy
+app.get('/api/proxy', async (req, res) => {
+  const { url } = req.query;
+  if (!url) return res.status(400).json({ error: 'URL parametresi gerekli' });
+
+  try {
+    const response = await axios.get(url);
+    res.status(response.status).send(response.data);
+  } catch (error) {
+    console.error('❌ Proxy hatası:', error.message);
+    res.status(500).json({ error: 'Proxy isteği başarısız' });
+  }
+});
+
+// 🕵️ dlnk.one özel proxy
+app.get('/api/dlnk', async (req, res) => {
+  const { id, type } = req.query;
+  if (!id) return res.status(400).json({ error: 'ID parametresi gerekli' });
+
+  const url = `https://dlnk.one/e?id=${id}&type=${type || 1}`;
+
+  try {
+    const response = await axios.get(url);
+    res.status(response.status).send(response.data);
+  } catch (error) {
+    console.error('❌ dlnk.one proxy hatası:', error.message);
+    res.status(500).json({ error: 'dlnk.one isteği başarısız' });
+  }
+});
+
+// 📦 API route'ları bağla
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/books', require('./routes/books'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/borrowings', require('./routes/borrowings'));
 
-// Error handling middleware
+// 🧯 Global hata yakalayıcı
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'An error occurred!' });
+  console.error('❌ Global hata:', err.stack);
+  res.status(500).json({ error: 'Sunucuda bir hata oluştu!' });
 });
 
-// Start server
+// 🔊 Server'ı başlat
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
-  console.log(`Server is running: http://localhost:${PORT}`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use. Trying port ${PORT + 1}`);
-    server.listen(PORT + 1, () => {
-      console.log(`Server is running: http://localhost:${PORT + 1}`);
-    });
-  } else {
-    console.error('Server error:', err);
-    process.exit(1);
-  }
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server aktif: http://localhost:${PORT}`);
 });

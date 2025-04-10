@@ -7,8 +7,10 @@ import {
   Typography,
   Box,
   Card,
-  CardContent
+  CardContent,
+  Divider
 } from '@mui/material';
+import ExternalResource from '../components/ExternalResource';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -79,6 +81,22 @@ const Dashboard = () => {
             <Typography variant="body2" color="text.secondary">
               No recent activity to display.
             </Typography>
+          </Paper>
+        </Grid>
+
+        {/* External Resource Demo */}
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ mb: 2 }}>
+              <Typography component="h2" variant="h6" color="primary" gutterBottom>
+                External Resource Demo
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                This section demonstrates how to handle external API requests through our proxy.
+              </Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+            <ExternalResource />
           </Paper>
         </Grid>
       </Grid>
